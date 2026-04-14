@@ -15,7 +15,7 @@ async function findRoom() {
   result.innerText = "Processing...";
 
   try {
-    const response = await fetch("http://localhost:5000/find", {
+    const response = await fetch(https://exam-room-finder-7oow.onrender.com/find", {
       method: "POST",
       body: formData
     });
