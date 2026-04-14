@@ -1,31 +1,39 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import pytesseract
-from PIL import Image
+import requests
 import pdfplumber
 import io
-
-# If using Windows, set this path (IMPORTANT)
-pytesseract.pytesseract.tesseract_cmd = r"C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Home route (test server)
+# Home route
 @app.route('/')
 def home():
     return "Server is working"
 
-# Function: Extract text from image
+# 🔍 OCR using OCR.space API
 def extract_text_from_image(file):
     try:
-        image = Image.open(file).convert("RGB")
-        text = pytesseract.image_to_string(image)
-        return text
+        url = "https://api.ocr.space/parse/image"
+        files = {"file": file}
+        data = {
+            "apikey": "helloworld",  # Free demo key (limited usage)
+            "language": "eng"
+        }
+
+        response = requests.post(url, files=files, data=data)
+        result = response.json()
+
+        if result.get("IsErroredOnProcessing"):
+            return ""
+
+        return result["ParsedResults"][0]["ParsedText"]
+
     except Exception as e:
         return ""
 
-# Function: Extract text from PDF
+# 📄 Extract text from PDF
 def extract_text_from_pdf(file):
     text = ""
     try:
@@ -34,15 +42,14 @@ def extract_text_from_pdf(file):
                 page_text = page.extract_text()
                 if page_text:
                     text += page_text + "\n"
-    except Exception as e:
+    except:
         return ""
     return text
 
-# Main API
+# 🚀 Main API
 @app.route('/find', methods=['POST'])
 def find_room():
     try:
-        # Get file and roll number
         file = request.files.get('file')
         roll = request.form.get('roll')
 
@@ -70,4 +77,4 @@ def find_room():
 
 # Run server
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
