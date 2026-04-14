@@ -1,80 +1,51 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import requests
-import pdfplumber
-import io
+async function findRoom() {
+const fileInput = document.getElementById("file");
+const rollInput = document.getElementById("roll");
+const result = document.getElementById("result");
 
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+const file = fileInput.files[0];
+const roll = rollInput.value.trim();
 
-# Home route
-@app.route('/')
-def home():
-    return "Server is working"
+// Validation
+if (!file) {
+result.innerText = "❗ Please upload a file";
+return;
+}
 
-# 🔍 OCR using OCR.space API
-def extract_text_from_image(file):
-    try:
-        url = "https://api.ocr.space/parse/image"
-        files = {"file": file}
-        data = {
-            "apikey": "helloworld",  # Free demo key (limited usage)
-            "language": "eng"
-        }
+if (!roll) {
+result.innerText = "❗ Please enter roll number";
+return;
+}
 
-        response = requests.post(url, files=files, data=data)
-        result = response.json()
+let formData = new FormData();
+formData.append("file", file);
+formData.append("roll", roll);
 
-        if result.get("IsErroredOnProcessing"):
-            return ""
+result.innerText = "⏳ Processing... Please wait";
 
-        return result["ParsedResults"][0]["ParsedText"]
+try {
+const response = await fetch("https://exam-room-finder-7oow.onrender.com/find", {
+method: "POST",
+body: formData
+});
 
-    except Exception as e:
-        return ""
+```
+// Handle server errors
+if (!response.ok) {
+  throw new Error("Server error");
+}
 
-# 📄 Extract text from PDF
-def extract_text_from_pdf(file):
-    text = ""
-    try:
-        with pdfplumber.open(io.BytesIO(file.read())) as pdf:
-            for page in pdf.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    text += page_text + "\n"
-    except:
-        return ""
-    return text
+const data = await response.json();
 
-# 🚀 Main API
-@app.route('/find', methods=['POST'])
-def find_room():
-    try:
-        file = request.files.get('file')
-        roll = request.form.get('roll')
+if (data.result) {
+  result.innerText = data.result;
+} else {
+  result.innerText = "⚠️ Unexpected response from server";
+}
+```
 
-        if not file or not roll:
-            return jsonify({"result": "❗ File or roll number missing"})
-
-        # Extract text
-        if file.filename.lower().endswith('.pdf'):
-            text = extract_text_from_pdf(file)
-        else:
-            text = extract_text_from_image(file)
-
-        if not text:
-            return jsonify({"result": "❗ Could not read file"})
-
-        # Search roll number
-        for line in text.split("\n"):
-            if roll.strip() in line:
-                return jsonify({"result": f"✅ Found: {line}"})
-
-        return jsonify({"result": "❌ Roll number not found"})
-
-    except Exception as e:
-        return jsonify({"result": f"❌ Error: {str(e)}"})
-
-# Run server
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+} catch (error) {
+console.error("Error:", error);
+result.innerText = "❌ Cannot connect to backend. Try again in a few seconds.";
+}
+}
