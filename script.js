@@ -1,30 +1,43 @@
 async function findRoom() {
-  const file = document.getElementById("file").files[0];
-  const roll = document.getElementById("roll").value;
-  const result = document.getElementById("result");
+const file = document.getElementById("file").files[0];
+const roll = document.getElementById("roll").value.trim();
+const result = document.getElementById("result");
 
-  if (!file || !roll) {
-    result.innerText = "Upload file and enter roll number";
-    return;
-  }
+// Validation
+if (!file) {
+result.innerText = "❗ Please upload a file";
+return;
+}
 
-  let formData = new FormData();
-  formData.append("file", file);
-  formData.append("roll", roll);
+if (!roll) {
+result.innerText = "❗ Please enter roll number";
+return;
+}
 
-  result.innerText = "Processing...";
+const formData = new FormData();
+formData.append("file", file);
+formData.append("roll", roll);
 
-  try {
-    const response = await fetch(https://exam-room-finder-7oow.onrender.com/find", {
-      method: "POST",
-      body: formData
-    });
+result.innerText = "⏳ Processing... (first time may take 30 sec)";
 
-    const data = await response.json();
-    result.innerText = data.result;
+try {
+const response = await fetch("https://exam-room-finder-7oow.onrender.com/find", {
+method: "POST",
+body: formData
+});
 
-  } catch (error) {
-    console.error(error);
-    result.innerText = "Cannot connect to backend";
-  }
+```
+if (!response.ok) {
+  throw new Error("Server error");
+}
+
+const data = await response.json();
+
+result.innerText = data.result || "⚠️ No response from server";
+```
+
+} catch (error) {
+console.error(error);
+result.innerText = "❌ Cannot connect to backend. Wait and try again.";
+}
 }
